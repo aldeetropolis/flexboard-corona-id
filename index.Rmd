@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Tracking Pasien COVID-19 Indonesia"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
