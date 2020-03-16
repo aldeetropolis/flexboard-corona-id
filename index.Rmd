@@ -33,15 +33,11 @@ simpleNetwork(tracing.network, fontSize = 12, zoom = TRUE)
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Chart B
+### Sumber Data
 
-```{r}
+@KawalCovID
 
-```
+### Pengolah Data
 
-### Chart C
-
-```{r}
-
-```
+dr. Aldilas Achmad Nursetyo, M.Sc.
 
