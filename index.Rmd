@@ -16,7 +16,7 @@ library(htmlwidgets)
 library(htmltools)
 ```
 
-Column {data-width=650}
+Column {data-width=750}
 -----------------------------------------------------------------------
 
 ### Visualisasi Jaringan Infeksi Pasien COVID-19
@@ -30,7 +30,7 @@ tracing.network$Sumber.Kontak <- ifelse(tracing.network$Sumber.Kontak == "", tra
 simpleNetwork(tracing.network, fontSize = 12, zoom = TRUE)
 ```
 
-Column {data-width=350}
+Column {data-width=250}
 -----------------------------------------------------------------------
 
 ### Sumber Data
