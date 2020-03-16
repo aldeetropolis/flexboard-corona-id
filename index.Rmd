@@ -1,0 +1,48 @@
+---
+title: "Untitled"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(curl)
+library(networkD3)
+library(igraph)
+library(htmlwidgets)
+library(htmltools)
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Chart A
+
+```{r}
+idn.covidtracing <- read.csv("https://docs.google.com/spreadsheets/d/1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw/export?format=csv&gid=0", sep=",", skip = 1)
+idn.covidtracing$Sumber.Kontak <- ifelse(idn.covidtracing$Jenis.kasus == "Impor", "Impor", as.character(idn.covidtracing$Sumber.Kontak))
+tracing.network <- idn.covidtracing %>% select(No, Sumber.Kontak)
+tracing.network$Sumber.Kontak <- ifelse(tracing.network$Sumber.Kontak == "", tracing.network$No, as.character(tracing.network$Sumber.Kontak))
+
+simpleNetwork(tracing.network, fontSize = 12, zoom = TRUE) %>% 
+  htmlwidgets::prependContent(htmltools::tags$h1("Indonesia Coronavirus Infection Tracking"))
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Chart B
+
+```{r}
+
+```
+
+### Chart C
+
+```{r}
+
+```
+
