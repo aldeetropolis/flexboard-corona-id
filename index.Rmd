@@ -1,5 +1,5 @@
 ---
-title: "Tracking Pasien COVID-19 Indonesia"
+title: "Clustering Pasien COVID-19 Indonesia"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -19,7 +19,7 @@ library(htmltools)
 Column {data-width=750}
 -----------------------------------------------------------------------
 
-### Visualisasi Jaringan Infeksi Pasien COVID-19
+### Visualisasi Cluster Infeksi
 
 ```{r}
 idn.covidtracing <- read.csv("https://docs.google.com/spreadsheets/d/1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw/export?format=csv&gid=0", sep=",", skip = 1)
