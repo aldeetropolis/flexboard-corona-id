@@ -14,7 +14,8 @@ output:
 library(flexdashboard)
 library(dplyr)
 library(plotly)
-library(googlesheets)
+library(googlesheets4)
+library(gargle)
 library(curl)
 library(networkD3)
 library(igraph)
@@ -30,17 +31,18 @@ recovered_color <- "forestgreen"
 death_color <- "red"
 numtest_color <- "orange"
 #------------------ Data Indonesia---------------
-#my_sheets <- gs_ls()
-#kawalcovid <- gs_key("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw")
-#df <- gs_read(kawalcovid, ws = 3)
-df <- read_excel("COVID-19 di Indonesia @kawalcovid19.xlsx", sheet = "Statistik Harian", .name_repair = "minimal")
-names(df)[1] <- "X1"
+# designate project-specific cache
+#options(gargle_oauth_cache = ".kawalcovidauth", gargle_oauth_email = "mail.aldilas@gmail.com")
+sheets_auth(cache = ".kawalcovidauth")
+df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian")
+df <- rename(df, X1 = 1)
 df <- df %>% rename(death_cum = `Meninggal
 (kumulatif)`)
 df <- df %>% rename(death_daily = `Meninggal
 (baru)`)
 df$X1 <- as.Date(df$X1, format = "%d %b")
 df$daily_neg <- as.integer(df$Negatif - lag(df$Negatif))
+df$perawatan <- as.integer(df$`Dalam Perawatan` - lag(df$`Dalam Perawatan`))
 ```
 
 Statistik Harian
@@ -209,7 +211,7 @@ tracing.network$Sumber.Kontak <- ifelse(tracing.network$Sumber.Kontak == "", tra
 simpleNetwork(tracing.network, fontSize = 12, zoom = TRUE)
 ```
 
-Map
+World Map
 =======================================================================
 
 ### **Jumlah kasus di seluruh dunia**
@@ -261,10 +263,6 @@ map_object %>%
     options = layersControlOptions(collapsed = FALSE)
   )
 ```
-
-
-
-
 
 Tentang Dasbor
 =======================================================================
