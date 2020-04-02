@@ -1,23 +1,202 @@
 ---
-title: "Clustering Pasien COVID-19 Indonesia"
+title: "Status Coronavirus di Indonesia"
+author: "Aldilas Achmad N."
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
+    orientation: rows
+    # social: ["facebook", "twitter", "linkedin"]
+    source_code: embed
     vertical_layout: fill
 ---
 
 ```{r setup, include=FALSE}
+#------------------ Packages ------------------
 library(flexdashboard)
-library(tidyverse)
+library(dplyr)
+library(plotly)
+library(googlesheets)
 library(curl)
 library(networkD3)
 library(igraph)
 library(htmlwidgets)
 library(htmltools)
+library(readxl)
+#------------------ Parameters ------------------
+# Set colors
+# https://www.w3.org/TR/css-color-3/#svg-color
+confirmed_color <- "purple"
+active_color <- "#1f77b4"
+recovered_color <- "forestgreen"
+death_color <- "red"
+numtest_color <- "orange"
+#------------------ Data Indonesia---------------
+#my_sheets <- gs_ls()
+#kawalcovid <- gs_key("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw")
+#df <- gs_read(kawalcovid, ws = 3)
+df <- read_excel("COVID-19 di Indonesia @kawalcovid19.xlsx", sheet = "Statistik Harian", .name_repair = "minimal")
+names(df)[1] <- "X1"
+df <- df %>% rename(death_cum = `Meninggal
+(kumulatif)`)
+df <- df %>% rename(death_daily = `Meninggal
+(baru)`)
+df$X1 <- as.Date(df$X1, format = "%d %b")
+df$daily_neg <- as.integer(df$Negatif - lag(df$Negatif))
 ```
 
-Column {data-width=750}
+Statistik Harian
+=======================================================================
+
+Row {data-width=400}
 -----------------------------------------------------------------------
+
+### confirmed {.value-box}
+
+```{r}
+
+valueBox(
+  value = paste(format(sum(df$`Kasus baru`, na.rm = T), big.mark = ","), "", sep = " "),
+  caption = "Total kasus terkonfirmasi",
+  icon = "fas fa-user-md",
+  color = confirmed_color
+)
+```
+
+
+<!-- ### active {.value-box} -->
+
+<!-- ```{r} -->
+<!-- valueBox( -->
+<!--   value = paste(format(sum(df$unrecovered, na.rm = TRUE), big.mark = ","), " (", -->
+<!--     round(100 * sum(df$unrecovered, na.rm = TRUE) / sum(df$confirmed), 1), -->
+<!--     "%)", -->
+<!--     sep = "" -->
+<!--   ), -->
+<!--   caption = "Active cases (% of total cases)", icon = "fas fa-ambulance", -->
+<!--   color = active_color -->
+<!-- ) -->
+<!-- ``` -->
+
+### Num of Test {.value-box}
+
+```{r}
+
+valueBox(
+  value = paste(format(sum(df$`Jumlah diperiksa`, na.rm = TRUE), big.mark = ","), "", sep = " "),
+  caption = "Jumlah tes yang telah dilakukan",
+  icon = "fas fa-vial",
+  color = numtest_color
+)
+```
+
+
+### death {.value-box}
+
+```{r}
+
+valueBox(
+  value = paste(format(sum(df$death_daily, na.rm = TRUE), big.mark = ","), " (", round(100 * sum(df$death_daily, na.rm = TRUE) / sum(df$`Kasus baru`, na.rm = TRUE), 1), "%)", sep = ""),
+  caption = "Jumlah kasus meninggal",
+  icon = "fas fa-heart-broken",
+  color = death_color
+)
+```
+
+
+Row
+-----------------------------------------------------------------------
+
+### **Laporan kasus kumulatif**
+    
+```{r message=FALSE, warning=FALSE}
+plot_ly(data = df) %>%
+  add_trace(
+    x = ~X1,
+    # y = ~active_cum,
+    y = ~`Jumlah kasus`,
+    type = "scatter",
+    mode = "lines+markers",
+    # name = "Active",
+    name = "Jumlah kasus Terkonfirmasi",
+    line = list(color = active_color),
+    marker = list(color = active_color)
+  ) %>%
+  add_trace(
+    x = ~X1,
+    y = ~death_cum,
+    type = "scatter",
+    mode = "lines+markers",
+    name = "Jumlah kasus kematian",
+    line = list(color = death_color),
+    marker = list(color = death_color)
+  ) %>% 
+  add_annotations(
+    x = as.Date("2020-03-11"),
+    y = 3,
+    text = paste("Kematian pertama"),
+    xref = "x",
+    yref = "y",
+    arrowhead = 5,
+    arrowhead = 3,
+    arrowsize = 1,
+    showarrow = TRUE,
+    ax = -90,
+    ay = -90
+  ) %>%
+  layout(
+    title = "",
+    yaxis = list(title = "Jumlah kasus kumulatif"),
+    xaxis = list(title = "Tanggal"),
+    legend = list(x = 0.1, y = 0.9),
+    hovermode = "compare"
+  )
+```
+
+### **Laporan kasus harian**
+```{r message=FALSE, warning=FALSE}
+plot_ly(data = df) %>% 
+  add_trace(
+    x = ~X1,
+    y = ~`Kasus baru`,
+    name = "Kasus terkonfirmasi baru",
+    type = "bar",
+    mode = "markers"
+  ) %>% 
+  add_trace(
+    x = ~X1,
+    y = ~`Jumlah Tes Harian`,
+    name = "Jumlah test yang dilakukan",
+    type = "bar",
+    mode = "markers"
+  ) %>% 
+  add_annotations(
+    x = as.Date("2020-03-16"),
+    y = 3,
+    text = paste("Perubahan kriteria pemeriksaan"),
+    xref = "x",
+    yref = "y",
+    arrowhead = 5,
+    arrowhead = 3,
+    arrowsize = 1,
+    showarrow = TRUE,
+    ax = -90,
+    ay = -90
+  ) %>% 
+  layout(
+    title = "",
+    yaxis = list(title = "Jumlah kasus harian"),
+    xaxis = list(title = "Tanggal"),
+    legend = list(x = 0.1, y = 0.9),
+    hovermode = "compare"
+  )
+```
+
+Kluster Map
+=======================================================================
+
+
+Column {data-width=400}
+-------------------------------------
+
 
 ### Visualisasi Cluster Infeksi
 
@@ -30,14 +209,78 @@ tracing.network$Sumber.Kontak <- ifelse(tracing.network$Sumber.Kontak == "", tra
 simpleNetwork(tracing.network, fontSize = 12, zoom = TRUE)
 ```
 
-Column {data-width=250}
------------------------------------------------------------------------
+Map
+=======================================================================
 
-### Sumber Data
+### **Jumlah kasus di seluruh dunia**
 
-@KawalCovID
+```{r message=FALSE, warning=FALSE}
+# map tab added by Art Steinmetz
+library(leaflet)
+library(leafpop)
+library(purrr)
+library(coronavirus)
+cv_data_for_plot <- coronavirus %>%
+  # dplyr::filter(Country.Region == "Belgium") %>%
+  dplyr::filter(cases > 0) %>%
+  dplyr::group_by(Country.Region, Province.State, Lat, Long, type) %>%
+  dplyr::summarise(cases = sum(cases)) %>%
+  dplyr::mutate(log_cases = 2 * log(cases)) %>%
+  dplyr::ungroup()
+cv_data_for_plot.split <- cv_data_for_plot %>% split(cv_data_for_plot$type)
+pal <- colorFactor(c("orange", "red", "green"), domain = c("Terkonfirmasi", "Kematian", "Sembuh"))
+map_object <- leaflet() %>% addProviderTiles(providers$Stamen.Toner)
+names(cv_data_for_plot.split) %>%
+  purrr::walk(function(df) {
+    map_object <<- map_object %>%
+      addCircleMarkers(
+        data = cv_data_for_plot.split[[df]],
+        lng = ~Long, lat = ~Lat,
+        #                 label=~as.character(cases),
+        color = ~ pal(type),
+        stroke = FALSE,
+        fillOpacity = 0.8,
+        radius = ~log_cases,
+        popup = leafpop::popupTable(cv_data_for_plot.split[[df]],
+          feature.id = FALSE,
+          row.numbers = FALSE,
+          zcol = c("type", "cases", "Country.Region", "Province.State")
+        ),
+        group = df,
+        #                 clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F),
+        labelOptions = labelOptions(
+          noHide = F,
+          direction = "auto"
+        )
+      )
+  })
 
-### Pengolah Data
+map_object %>%
+  addLayersControl(
+    overlayGroups = names(cv_data_for_plot.split),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+```
 
-dr. Aldilas Achmad Nursetyo, M.Sc.
 
+
+
+
+Tentang Dasbor
+=======================================================================
+
+**Dasbor Situasi Coronavirus di Indonesia**
+
+Dasbor ini merupakan visualisasi data mengenai epidemi COVID-19 yang sedang berlangsung di Indonesia. Dasbor ini dikembangkan menggunakan piranti lunak R. Pengembangan dasbor ini diadaptasi dari [dasbor](https://ramikrispin.github.io/coronavirus_dashboard/){target="_blank"} yang dikembangkan oleh Rami Krispin.
+
+**Data**
+
+Data yang digunakan untuk pengembangan dasbor ini menggunakan data yang dikumpulkan oleh relawan [KawalCovID19](https://kawalcovid19.id){target="_blank"} dan juga dataset dari pustaka R [`{coronavirus}`](https://github.com/RamiKrispin/coronavirus){target="_blank"} 
+
+Data akan selalu diupdate setiap hari.
+
+Data mentah diambil dari data yang disediakan Johns Hopkins University Center for Systems Science and Engineering (JHU CCSE) Coronavirus [repositori](https://github.com/RamiKrispin/coronavirus-csv){target="_blank"}.
+
+**Kontak**
+
+Untuk mengetahui kode sumber dasbor ini dapat mengunjungi [Github](https://github.com/aldeetropolis/flexboard-covid-id){target="_blank"}.
