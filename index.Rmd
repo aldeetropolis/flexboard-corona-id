@@ -10,6 +10,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 #------------------ Packages ------------------
 library(flexdashboard)
 library(dplyr)
@@ -34,12 +35,7 @@ numtest_color <- "orange"
 # designate project-specific cache
 #options(gargle_oauth_cache = ".kawalcovidauth", gargle_oauth_email = "mail.aldilas@gmail.com")
 sheets_auth(cache = ".kawalcovidauth")
-df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian")
-df <- rename(df, X1 = 1)
-df <- df %>% rename(death_cum = `Meninggal
-(kumulatif)`)
-df <- df %>% rename(death_daily = `Meninggal
-(baru)`)
+df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(X1 = 1, death_cum = 10, death_daily = 9)
 df$X1 <- as.Date(df$X1, format = "%d %b")
 df$daily_neg <- as.integer(df$Negatif - lag(df$Negatif))
 df$perawatan <- as.integer(df$`Dalam Perawatan` - lag(df$`Dalam Perawatan`))
@@ -54,12 +50,11 @@ Row {data-width=400}
 ### confirmed {.value-box}
 
 ```{r}
-
 valueBox(
   value = paste(format(sum(df$`Kasus baru`, na.rm = T), big.mark = ","), "", sep = " "),
   caption = "Total kasus terkonfirmasi",
   icon = "fas fa-user-md",
-  color = confirmed_color
+  color = active_color
 )
 ```
 
@@ -78,19 +73,6 @@ valueBox(
 <!-- ) -->
 <!-- ``` -->
 
-### Num of Test {.value-box}
-
-```{r}
-
-valueBox(
-  value = paste(format(sum(df$`Jumlah diperiksa`, na.rm = TRUE), big.mark = ","), "", sep = " "),
-  caption = "Jumlah tes yang telah dilakukan",
-  icon = "fas fa-vial",
-  color = numtest_color
-)
-```
-
-
 ### death {.value-box}
 
 ```{r}
@@ -103,6 +85,17 @@ valueBox(
 )
 ```
 
+### Num of Test {.value-box}
+
+```{r}
+
+valueBox(
+  value = paste(format(sum(df$`Jumlah Tes Harian`, na.rm = TRUE), big.mark = ","), "", sep = " "),
+  caption = "Jumlah tes yang telah dilakukan",
+  icon = "fas fa-vial",
+  color = numtest_color
+)
+```
 
 Row
 -----------------------------------------------------------------------
@@ -161,18 +154,28 @@ plot_ly(data = df) %>%
     y = ~`Kasus baru`,
     name = "Kasus terkonfirmasi baru",
     type = "bar",
-    mode = "markers"
+    mode = "markers",
+    marker = list(color = active_color)
+  ) %>% 
+  add_trace(
+    x = ~X1,
+    y = ~death_daily,
+    name = "Kasus meninggal",
+    type = "bar",
+    mode = "markers",
+    marker = list(color = death_color)
   ) %>% 
   add_trace(
     x = ~X1,
     y = ~`Jumlah Tes Harian`,
     name = "Jumlah test yang dilakukan",
     type = "bar",
-    mode = "markers"
+    mode = "markers",
+    marker = list(color = numtest_color)
   ) %>% 
   add_annotations(
     x = as.Date("2020-03-16"),
-    y = 3,
+    y = -1,
     text = paste("Perubahan kriteria pemeriksaan"),
     xref = "x",
     yref = "y",
@@ -185,7 +188,7 @@ plot_ly(data = df) %>%
   ) %>% 
   layout(
     title = "",
-    yaxis = list(title = "Jumlah kasus harian"),
+    yaxis = list(title = "Jumlah kasus harian (log)", type="log"),
     xaxis = list(title = "Tanggal"),
     legend = list(x = 0.1, y = 0.9),
     hovermode = "compare"
