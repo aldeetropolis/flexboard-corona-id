@@ -35,7 +35,7 @@ numtest_color <- "orange"
 # designate project-specific cache
 #options(gargle_oauth_cache = ".kawalcovidauth", gargle_oauth_email = "mail.aldilas@gmail.com")
 sheets_auth(cache = ".kawalcovidauth")
-df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(X1 = 1, death_cum = 10, death_daily = 9)
+df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(X1 = 1, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9)
 df$X1 <- as.Date(df$X1, format = "%d %b")
 df$daily_neg <- as.integer(df$Negatif - lag(df$Negatif))
 df$perawatan <- as.integer(df$`Dalam Perawatan` - lag(df$`Dalam Perawatan`))
@@ -58,20 +58,14 @@ valueBox(
 )
 ```
 
-
-<!-- ### active {.value-box} -->
-
-<!-- ```{r} -->
-<!-- valueBox( -->
-<!--   value = paste(format(sum(df$unrecovered, na.rm = TRUE), big.mark = ","), " (", -->
-<!--     round(100 * sum(df$unrecovered, na.rm = TRUE) / sum(df$confirmed), 1), -->
-<!--     "%)", -->
-<!--     sep = "" -->
-<!--   ), -->
-<!--   caption = "Active cases (% of total cases)", icon = "fas fa-ambulance", -->
-<!--   color = active_color -->
-<!-- ) -->
-<!-- ``` -->
+### Recovered {.value-box}
+```{r}
+valueBox(
+  value = paste(format(sum(df$recovered_daily, na.rm=TRUE), big.mark = ","), " (", round(100 *  sum(df$recovered_daily, na.rm = TRUE) / sum(df$`Kasus baru`, na.rm=TRUE), 1), "%)", sep = ""),
+  caption = "Jumlah kasus sembuh",
+  icon = "fas fa-laugh",
+  color = recovered_color)
+```
 
 ### death {.value-box}
 
@@ -80,7 +74,7 @@ valueBox(
 valueBox(
   value = paste(format(sum(df$death_daily, na.rm = TRUE), big.mark = ","), " (", round(100 * sum(df$death_daily, na.rm = TRUE) / sum(df$`Kasus baru`, na.rm = TRUE), 1), "%)", sep = ""),
   caption = "Jumlah kasus meninggal",
-  icon = "fas fa-heart-broken",
+  icon = "fas fa-sad-tear",
   color = death_color
 )
 ```
@@ -123,7 +117,16 @@ plot_ly(data = df) %>%
     name = "Jumlah kasus kematian",
     line = list(color = death_color),
     marker = list(color = death_color)
-  ) %>% 
+  ) %>%
+  add_trace(
+    x = ~X1,
+    y = ~recovered_cum,
+    type = "scatter",
+    mode = "lines+markers",
+    name = "Jumlah kasus sembuh",
+    line = list(color = recovered_color),
+    marker = list(color = recovered_color)
+  ) %>%
   add_annotations(
     x = as.Date("2020-03-11"),
     y = 3,
@@ -154,28 +157,40 @@ plot_ly(data = df) %>%
     y = ~`Kasus baru`,
     name = "Kasus terkonfirmasi baru",
     type = "bar",
-    mode = "markers",
-    marker = list(color = active_color)
+    mode = "lines+markers",
+    marker = list(color = active_color),
+    line = list(color = active_color)
   ) %>% 
   add_trace(
     x = ~X1,
     y = ~death_daily,
     name = "Kasus meninggal",
     type = "bar",
-    mode = "markers",
-    marker = list(color = death_color)
-  ) %>% 
+    mode = "lines+markers",
+    marker = list(color = death_color),
+    line = list(color = death_color)
+  ) %>%
+  add_trace(
+    x = ~X1,
+    y = ~recovered_daily,
+    name = "Kasus sembuh",
+    type = "bar",
+    mode = "lines+markers",
+    marker = list(color = recovered_color),
+    line = list(color = recovered_color)
+  ) %>%
   add_trace(
     x = ~X1,
     y = ~`Jumlah Tes Harian`,
     name = "Jumlah test yang dilakukan",
     type = "bar",
-    mode = "markers",
-    marker = list(color = numtest_color)
+    mode = "lines+markers",
+    marker = list(color = numtest_color),
+    line = list(color = numtest_color)
   ) %>% 
   add_annotations(
     x = as.Date("2020-03-16"),
-    y = -1,
+    y = 3,
     text = paste("Perubahan kriteria pemeriksaan"),
     xref = "x",
     yref = "y",
@@ -188,7 +203,7 @@ plot_ly(data = df) %>%
   ) %>% 
   layout(
     title = "",
-    yaxis = list(title = "Jumlah kasus harian (log)", type="log"),
+    yaxis = list(title = "Jumlah kasus harian"),
     xaxis = list(title = "Tanggal"),
     legend = list(x = 0.1, y = 0.9),
     hovermode = "compare"
