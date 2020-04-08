@@ -10,7 +10,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 #------------------ Packages ------------------
 library(flexdashboard)
 library(dplyr)
@@ -37,9 +37,13 @@ numtest_color <- "orange"
 sheets_auth(cache = ".kawalcovidauth")
 df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(X1 = 1, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9)
 df$X1 <- as.Date(df$X1, format = "%d %b")
+#------------------ Data lokal pulau Jawa--------
+provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:22)) %>% rename(date = 1)
+provRecoverCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(50:68)) %>% rename(date = 1)
+provDeathCum<- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(90:111)) %>% rename(date = 1)
 ```
 
-Statistik Harian
+Statistik Nasional
 =======================================================================
 
 Row {data-width=400}
@@ -89,7 +93,7 @@ valueBox(
 )
 ```
 
-Row
+Row {data-width=400}
 -----------------------------------------------------------------------
 
 ### **Laporan kasus kumulatif**
@@ -208,13 +212,71 @@ plot_ly(data = df) %>%
   )
 ```
 
+
+Statistik Provinsi
+=======================================================================
+
+Row {data-width=400}
+-----------------------------------------------------------------------
+### Perbandingan data kumulatif antar-provinsi di Pulau Jawa
+```{r}
+plot_ly(data = provCaseCum) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Jakarta,
+    name = "DKI Jakarta",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Banten,
+    name = "Banten",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Jabar,
+    name = "Jawa Barat",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Jateng,
+    name = "Jawa Tengah",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~DIY,
+    name = "DI Yogyakarta",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Jatim,
+    name = "Jawa Timur",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  layout(
+    title = "",
+    yaxis = list(title = "Jumlah Kasus Kumulatif"),
+    xaxis = list(title = "Tanggal"),
+    legend = list(x = 0.1, y = 0.9),
+    hovermode = "compare"
+  )
+```
+
 Kluster Map
 =======================================================================
 
-
-Column {data-width=400}
+Row {data-width=400}
 -------------------------------------
-
 
 ### Visualisasi Cluster Infeksi
 
