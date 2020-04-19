@@ -38,7 +38,7 @@ sheets_auth(cache = ".kawalcovidauth")
 df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(X1 = 1, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9)
 df$X1 <- as.Date(df$X1, format = "%d %b")
 #------------------ Data lokal pulau Jawa--------
-provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:25)) %>% rename(date = 1)
+provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:33)) %>% rename(date = 1)
 #provRecoverCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(50:68)) %>% rename(date = 1)
 #provDeathCum<- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(90:111)) %>% rename(date = 1)
 ```
@@ -84,7 +84,7 @@ valueBox(
 
 ```{r}
 valueBox(
-  value = paste(format(sum(df$`Tes Harian`, na.rm = TRUE), big.mark = ","), "", sep = " "),
+  value = paste(format(sum(df$`Sampel baru harian`, na.rm = TRUE), big.mark = ","), "", sep = " "),
   caption = "Jumlah tes yang telah dilakukan",
   icon = "fas fa-vial",
   color = numtest_color
@@ -181,7 +181,7 @@ plot_ly(data = df) %>%
   ) %>%
   add_trace(
     x = ~X1,
-    y = ~`Tes Harian`,
+    y = ~`Sampel baru harian`,
     name = "Jumlah test yang dilakukan",
     type = "bar",
     mode = "lines+markers",
