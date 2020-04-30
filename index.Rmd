@@ -13,7 +13,6 @@ output:
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 #------------------ Packages ------------------
 library(flexdashboard)
-library(dplyr)
 library(plotly)
 library(googlesheets4)
 library(gargle)
@@ -22,6 +21,10 @@ library(networkD3)
 library(igraph)
 library(htmlwidgets)
 library(htmltools)
+library(sf)
+library(leaflet)
+library(leafpop)
+library(tidyverse)
 #library(readxl)
 #------------------ Parameters ------------------
 # Set colors
@@ -38,9 +41,16 @@ sheets_auth(cache = ".kawalcovidauth")
 df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(X1 = 1, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9)
 df$X1 <- as.Date(df$X1, format = "%d %b")
 #------------------ Data lokal pulau Jawa--------
-provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:33)) %>% rename(date = 1)
+provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:43)) %>% rename(date = 1)
+provCaseDat <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Kasus per Provinsi", range = cell_rows(2:36), col_types = "-ciii----------------------------") %>% rename(locname = `Provinsi Asal`)
+provCaseDat[4,1] <- "Kepulauan Bangka Belitung"
+provCaseDat[6,1] <- "Daerah Istimewa Yogyakarta"
+provCaseDat[7,1] <- "Daerah Khusus Ibukota Jakarta"
 #provRecoverCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(50:68)) %>% rename(date = 1)
 #provDeathCum<- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(90:111)) %>% rename(date = 1)
+idn <- read_sf("C:/Users/aldilas/Documents/Analisis Data Transaksi Halodoc/idn_map/Indonesia_Polygon.shp")
+provCaseDat <- provCaseDat %>% pivot_longer(cols = -locname, names_to = "type")
+provCaseMap <- merge(idn, provCaseDat, all = TRUE)
 ```
 
 Statistik Nasional
@@ -286,45 +296,32 @@ tracing.network$Sumber.Kontak <- ifelse(tracing.network$Sumber.Kontak == "", tra
 simpleNetwork(tracing.network, fontSize = 12, zoom = TRUE)
 ```
 
-World Map
+Peta Kasus Seluruh Indonesia
 =======================================================================
 
 ### **Jumlah kasus di seluruh dunia**
 
 ```{r message=FALSE, warning=FALSE}
-# map tab added by Art Steinmetz
-library(leaflet)
-library(leafpop)
-library(purrr)
-library(coronavirus)
-cv_data_for_plot <- coronavirus %>%
-  # dplyr::filter(Country.Region == "Belgium") %>%
-  dplyr::filter(cases > 0) %>%
-  dplyr::group_by(Country.Region, Province.State, Lat, Long, type) %>%
-  dplyr::summarise(cases = sum(cases)) %>%
-  dplyr::mutate(log_cases = 2 * log(cases)) %>%
-  dplyr::ungroup()
+cv_data_for_plot <- st_centroid(provCaseMap) %>%
+  dplyr::mutate(log_cases = 2 * log(value))
 cv_data_for_plot.split <- cv_data_for_plot %>% split(cv_data_for_plot$type)
-pal <- colorFactor(c("orange", "red", "green"), domain = c("Terkonfirmasi", "Kematian", "Sembuh"))
+pal <- colorFactor(c("orange", "red", "green"), domain = c("Kasus", "Kematian", "Sembuh"))
 map_object <- leaflet() %>% addProviderTiles(providers$Stamen.Toner)
 names(cv_data_for_plot.split) %>%
   purrr::walk(function(df) {
     map_object <<- map_object %>%
       addCircleMarkers(
         data = cv_data_for_plot.split[[df]],
-        lng = ~Long, lat = ~Lat,
-        #                 label=~as.character(cases),
-        color = ~ pal(type),
+        color = ~pal(type),
         stroke = FALSE,
         fillOpacity = 0.8,
         radius = ~log_cases,
         popup = leafpop::popupTable(cv_data_for_plot.split[[df]],
           feature.id = FALSE,
           row.numbers = FALSE,
-          zcol = c("type", "cases", "Country.Region", "Province.State")
+          zcol = c("type", "value")
         ),
         group = df,
-        #                 clusterOptions = markerClusterOptions(removeOutsideVisibleBounds = F),
         labelOptions = labelOptions(
           noHide = F,
           direction = "auto"
