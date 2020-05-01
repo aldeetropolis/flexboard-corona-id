@@ -12,6 +12,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 #------------------ Packages ------------------
+library(tidyverse)
 library(flexdashboard)
 library(plotly)
 library(googlesheets4)
@@ -24,7 +25,6 @@ library(htmltools)
 library(sf)
 library(leaflet)
 library(leafpop)
-library(tidyverse)
 #library(readxl)
 #------------------ Parameters ------------------
 # Set colors
@@ -41,8 +41,8 @@ sheets_auth(cache = ".kawalcovidauth")
 df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(X1 = 1, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9)
 df$X1 <- as.Date(df$X1, format = "%d %b")
 #------------------ Data lokal pulau Jawa--------
-provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:43)) %>% rename(date = 1)
-provCaseDat <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Kasus per Provinsi", range = cell_rows(2:36), col_types = "-ciii----------------------------") %>% rename(locname = `Provinsi Asal`)
+provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:45)) %>% rename(date = 1)
+provCaseDat <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Kasus per Provinsi", range = cell_rows(2:36), col_types = "-ciii-------------------------------") %>% rename(locname = `Provinsi Asal`)
 provCaseDat[4,1] <- "Kepulauan Bangka Belitung"
 provCaseDat[6,1] <- "Daerah Istimewa Yogyakarta"
 provCaseDat[7,1] <- "Daerah Khusus Ibukota Jakarta"
@@ -110,11 +110,9 @@ Row {data-width=400}
 plot_ly(data = df) %>%
   add_trace(
     x = ~X1,
-    # y = ~active_cum,
     y = ~`Jumlah kasus`,
     type = "scatter",
     mode = "lines+markers",
-    # name = "Active",
     name = "Jumlah kasus Terkonfirmasi",
     line = list(color = active_color),
     marker = list(color = active_color)
@@ -147,13 +145,13 @@ plot_ly(data = df) %>%
     arrowhead = 3,
     arrowsize = 1,
     showarrow = TRUE,
-    ax = -90,
+    ax = 0,
     ay = -90
   ) %>%
   layout(
     title = "",
     yaxis = list(title = "Jumlah kasus kumulatif"),
-    xaxis = list(title = "Tanggal"),
+    xaxis = list(title = "Tanggal", range = c("2020-03-02", "2020-05-01")),
     legend = list(x = 0.1, y = 0.9),
     hovermode = "compare"
   )
@@ -166,7 +164,7 @@ plot_ly(data = df) %>%
     x = ~X1,
     y = ~`Kasus baru`,
     name = "Kasus terkonfirmasi baru",
-    type = "bar",
+    type = "scatter",
     mode = "lines+markers",
     marker = list(color = active_color),
     line = list(color = active_color)
@@ -175,7 +173,7 @@ plot_ly(data = df) %>%
     x = ~X1,
     y = ~death_daily,
     name = "Kasus meninggal",
-    type = "bar",
+    type = "scatter",
     mode = "lines+markers",
     marker = list(color = death_color),
     line = list(color = death_color)
@@ -184,7 +182,7 @@ plot_ly(data = df) %>%
     x = ~X1,
     y = ~recovered_daily,
     name = "Kasus sembuh",
-    type = "bar",
+    type = "scatter",
     mode = "lines+markers",
     marker = list(color = recovered_color),
     line = list(color = recovered_color)
@@ -193,7 +191,7 @@ plot_ly(data = df) %>%
     x = ~X1,
     y = ~`Sampel baru harian`,
     name = "Jumlah test yang dilakukan",
-    type = "bar",
+    type = "scatter",
     mode = "lines+markers",
     marker = list(color = numtest_color),
     line = list(color = numtest_color)
@@ -208,13 +206,13 @@ plot_ly(data = df) %>%
     arrowhead = 3,
     arrowsize = 1,
     showarrow = TRUE,
-    ax = -90,
+    ax = 0,
     ay = -90
   ) %>% 
   layout(
     title = "",
     yaxis = list(title = "Jumlah kasus harian"),
-    xaxis = list(title = "Tanggal"),
+    xaxis = list(title = "Tanggal", range = c("2020-03-02", "2020-05-01")),
     legend = list(x = 0.1, y = 0.9),
     hovermode = "compare"
   )
@@ -319,7 +317,7 @@ names(cv_data_for_plot.split) %>%
         popup = leafpop::popupTable(cv_data_for_plot.split[[df]],
           feature.id = FALSE,
           row.numbers = FALSE,
-          zcol = c("type", "value")
+          zcol = c("type", "value", "locname")
         ),
         group = df,
         labelOptions = labelOptions(
