@@ -41,8 +41,10 @@ sheets_auth(cache = ".kawalcovidauth")
 df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(X1 = 1, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9)
 df$X1 <- as.Date(df$X1, format = "%d %b")
 #------------------ Data lokal pulau Jawa--------
-provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:45)) %>% rename(date = 1)
-provCaseDat <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Kasus per Provinsi", range = cell_rows(2:36), col_types = "-ciii-------------------------------") %>% rename(locname = `Provinsi Asal`)
+provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:49)) %>% rename(date = 1)
+provCaseDaily <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(51:102), col_names = TRUE) %>% rename(date = 1)
+provCaseDaily[is.na(provCaseDaily)] <- 0
+provCaseDat <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Kasus per Provinsi", range = cell_rows(2:36), col_types = "-ciii---------------------------------") %>% rename(locname = `Provinsi Asal`)
 provCaseDat[4,1] <- "Kepulauan Bangka Belitung"
 provCaseDat[6,1] <- "Daerah Istimewa Yogyakarta"
 provCaseDat[7,1] <- "Daerah Khusus Ibukota Jakarta"
@@ -226,6 +228,60 @@ Row {data-width=400}
 ### Perbandingan data kumulatif antar-provinsi di Pulau Jawa
 ```{r}
 plot_ly(data = provCaseCum) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Jakarta,
+    name = "DKI Jakarta",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Banten,
+    name = "Banten",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Jabar,
+    name = "Jawa Barat",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Jateng,
+    name = "Jawa Tengah",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~DIY,
+    name = "DI Yogyakarta",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  add_trace(
+    x = ~date,
+    y = ~Jatim,
+    name = "Jawa Timur",
+    type = "scatter",
+    mode = "lines+markers"
+  ) %>% 
+  layout(
+    title = "",
+    yaxis = list(title = "Jumlah Kasus Kumulatif"),
+    xaxis = list(title = "Tanggal"),
+    legend = list(x = 0.1, y = 0.9),
+    hovermode = "compare"
+  )
+```
+
+### Perbandingan data harian antar-provinsi di Pulau Jawa
+```{r}
+plot_ly(data = provCaseDaily) %>% 
   add_trace(
     x = ~date,
     y = ~Jakarta,
