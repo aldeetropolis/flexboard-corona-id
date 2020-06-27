@@ -7,6 +7,8 @@ output:
     # social: ["facebook", "twitter", "linkedin"]
     source_code: embed
     vertical_layout: fill
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -38,21 +40,23 @@ numtest_color <- "orange"
 # designate project-specific cache
 #options(gargle_oauth_cache = ".kawalcovidauth", gargle_oauth_email = "mail.aldilas@gmail.com")
 sheets_auth(cache = ".kawalcovidauth")
-df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(X1 = 1, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9)
-df$X1 <- as.Date(df$X1, format = "%d %b")
+df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(date = 1, case_daily = 2, case_cum = 5, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9, test_daily = `Orang yang dites`)
+df$date <- as.Date(df$date, format = "%d %b")
 #------------------ Data lokal pulau Jawa--------
-provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(1:49)) %>% rename(date = 1)
-provCaseDaily <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(51:102), col_names = TRUE) %>% rename(date = 1)
+provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A1:AI102") %>% rename(date = 1)
+provCaseDaily <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A104:AI208", col_names = TRUE) %>% rename(date = 1)
 provCaseDaily[is.na(provCaseDaily)] <- 0
-provCaseDat <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Kasus per Provinsi", range = cell_rows(2:36), col_types = "-ciii---------------------------------") %>% rename(locname = `Provinsi Asal`)
+provCaseDat <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Kasus per Provinsi", range = "Kasus per Provinsi!B2:H38")
 provCaseDat[4,1] <- "Kepulauan Bangka Belitung"
 provCaseDat[6,1] <- "Daerah Istimewa Yogyakarta"
 provCaseDat[7,1] <- "Daerah Khusus Ibukota Jakarta"
 #provRecoverCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(50:68)) %>% rename(date = 1)
 #provDeathCum<- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(90:111)) %>% rename(date = 1)
 idn <- read_sf("C:/Users/aldilas/Documents/Analisis Data Transaksi Halodoc/idn_map/Indonesia_Polygon.shp")
-provCaseDat <- provCaseDat %>% pivot_longer(cols = -locname, names_to = "type")
+provCaseDat <- provCaseDat %>% pivot_longer(cols = -`Provinsi Asal`, names_to = "type")
 provCaseMap <- merge(idn, provCaseDat, all = TRUE)
+#Google Mobility data
+mobility <- read_csv("C:/Users/aldilas/Downloads/Global_Mobility_Report.csv") %>% filter(sub_region_1 == "Special Region of Yogyakarta")
 ```
 
 Statistik Nasional
@@ -65,7 +69,7 @@ Row {data-width=400}
 
 ```{r}
 valueBox(
-  value = paste(format(sum(df$`Kasus baru`, na.rm = T), big.mark = ","), "", sep = " "),
+  value = paste(format(sum(df$case_daily, na.rm = T), big.mark = ","), "", sep = " "),
   caption = "Total kasus terkonfirmasi",
   icon = "fas fa-user-md",
   color = active_color
@@ -109,10 +113,9 @@ Row {data-width=400}
 ### **Laporan kasus kumulatif**
     
 ```{r message=FALSE, warning=FALSE}
-plot_ly(data = df) %>%
+plot_ly(data = df, x = ~date) %>%
   add_trace(
-    x = ~X1,
-    y = ~`Jumlah kasus`,
+    y = ~case_cum,
     type = "scatter",
     mode = "lines+markers",
     name = "Jumlah kasus Terkonfirmasi",
@@ -120,7 +123,6 @@ plot_ly(data = df) %>%
     marker = list(color = active_color)
   ) %>%
   add_trace(
-    x = ~X1,
     y = ~death_cum,
     type = "scatter",
     mode = "lines+markers",
@@ -129,7 +131,6 @@ plot_ly(data = df) %>%
     marker = list(color = death_color)
   ) %>%
   add_trace(
-    x = ~X1,
     y = ~recovered_cum,
     type = "scatter",
     mode = "lines+markers",
@@ -153,7 +154,7 @@ plot_ly(data = df) %>%
   layout(
     title = "",
     yaxis = list(title = "Jumlah kasus kumulatif"),
-    xaxis = list(title = "Tanggal", range = c("2020-03-02", "2020-05-01")),
+    xaxis = list(title = "Tanggal", range = c("2020-03-02", "2020-06-26")),
     legend = list(x = 0.1, y = 0.9),
     hovermode = "compare"
   )
@@ -161,42 +162,30 @@ plot_ly(data = df) %>%
 
 ### **Laporan kasus harian**
 ```{r message=FALSE, warning=FALSE}
-plot_ly(data = df) %>% 
+plot_ly(data = df, x = ~date) %>% 
   add_trace(
-    x = ~X1,
-    y = ~`Kasus baru`,
+    y = ~case_daily,
     name = "Kasus terkonfirmasi baru",
-    type = "scatter",
-    mode = "lines+markers",
-    marker = list(color = active_color),
-    line = list(color = active_color)
+    type = "bar",
+    marker = list(color = active_color)
   ) %>% 
   add_trace(
-    x = ~X1,
     y = ~death_daily,
     name = "Kasus meninggal",
-    type = "scatter",
-    mode = "lines+markers",
-    marker = list(color = death_color),
-    line = list(color = death_color)
+    type = "bar",
+    marker = list(color = death_color)
   ) %>%
   add_trace(
-    x = ~X1,
     y = ~recovered_daily,
     name = "Kasus sembuh",
-    type = "scatter",
-    mode = "lines+markers",
-    marker = list(color = recovered_color),
-    line = list(color = recovered_color)
+    type = "bar",
+    marker = list(color = recovered_color)
   ) %>%
   add_trace(
-    x = ~X1,
-    y = ~`Sampel baru harian`,
+    y = ~test_daily,
     name = "Jumlah test yang dilakukan",
-    type = "scatter",
-    mode = "lines+markers",
-    marker = list(color = numtest_color),
-    line = list(color = numtest_color)
+    type = "bar",
+    marker = list(color = numtest_color)
   ) %>% 
   add_annotations(
     x = as.Date("2020-03-16"),
@@ -214,7 +203,7 @@ plot_ly(data = df) %>%
   layout(
     title = "",
     yaxis = list(title = "Jumlah kasus harian"),
-    xaxis = list(title = "Tanggal", range = c("2020-03-02", "2020-05-01")),
+    xaxis = list(title = "Tanggal", range = c("2020-03-02", "2020-06-26")),
     legend = list(x = 0.1, y = 0.9),
     hovermode = "compare"
   )
@@ -227,44 +216,38 @@ Row {data-width=400}
 -----------------------------------------------------------------------
 ### Perbandingan data kumulatif antar-provinsi di Pulau Jawa
 ```{r}
-plot_ly(data = provCaseCum) %>% 
+plot_ly(data = provCaseCum, x = ~date) %>% 
   add_trace(
-    x = ~date,
     y = ~Jakarta,
     name = "DKI Jakarta",
     type = "scatter",
     mode = "lines+markers"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~Banten,
     name = "Banten",
     type = "scatter",
     mode = "lines+markers"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~Jabar,
     name = "Jawa Barat",
     type = "scatter",
     mode = "lines+markers"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~Jateng,
     name = "Jawa Tengah",
     type = "scatter",
     mode = "lines+markers"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~DIY,
     name = "DI Yogyakarta",
     type = "scatter",
     mode = "lines+markers"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~Jatim,
     name = "Jawa Timur",
     type = "scatter",
@@ -281,48 +264,36 @@ plot_ly(data = provCaseCum) %>%
 
 ### Perbandingan data harian antar-provinsi di Pulau Jawa
 ```{r}
-plot_ly(data = provCaseDaily) %>% 
+plot_ly(data = provCaseDaily, x = ~date) %>% 
   add_trace(
-    x = ~date,
     y = ~Jakarta,
     name = "DKI Jakarta",
-    type = "scatter",
-    mode = "lines+markers"
+    type = "bar"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~Banten,
     name = "Banten",
-    type = "scatter",
-    mode = "lines+markers"
+    type = "bar"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~Jabar,
     name = "Jawa Barat",
-    type = "scatter",
-    mode = "lines+markers"
+    type = "bar"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~Jateng,
     name = "Jawa Tengah",
-    type = "scatter",
-    mode = "lines+markers"
+    type = "bar"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~DIY,
     name = "DI Yogyakarta",
-    type = "scatter",
-    mode = "lines+markers"
+    type = "bar"
   ) %>% 
   add_trace(
-    x = ~date,
     y = ~Jatim,
     name = "Jawa Timur",
-    type = "scatter",
-    mode = "lines+markers"
+    type = "bar"
   ) %>% 
   layout(
     title = "",
@@ -333,25 +304,90 @@ plot_ly(data = provCaseDaily) %>%
   )
 ```
 
-Kluster Map
+Google Mobility Data
 =======================================================================
 
 Row {data-width=400}
 -------------------------------------
 
-### Visualisasi Cluster Infeksi
-
+### Daerah Istimewa Yogyakarta
 ```{r}
-idn.covidtracing <- read.csv("https://docs.google.com/spreadsheets/d/1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw/export?format=csv&gid=0", sep=",", skip = 1)
-idn.covidtracing$Sumber.Kontak <- ifelse(idn.covidtracing$Jenis.kasus == "Impor", "Impor", as.character(idn.covidtracing$Sumber.Kontak))
-tracing.network <- idn.covidtracing %>% select(No, Sumber.Kontak)
-tracing.network$Sumber.Kontak <- ifelse(tracing.network$Sumber.Kontak == "", tracing.network$No, as.character(tracing.network$Sumber.Kontak))
-
-simpleNetwork(tracing.network, fontSize = 12, zoom = TRUE)
+plot_ly(data = mobility, x = ~date) %>% 
+  add_trace(
+    y = ~retail_and_recreation_percent_change_from_baseline,
+    type = "scatter",
+    mode = "lines",
+    name = "Tempat rekreasi"
+  ) %>%
+  add_trace(
+    y = ~grocery_and_pharmacy_percent_change_from_baseline,
+    type = "scatter",
+    mode = "lines",
+    name = "Perbelanjaan dan Farmasi"
+  ) %>%
+  add_trace(
+    y = ~parks_percent_change_from_baseline,
+    type = "scatter",
+    mode = "lines",
+    name = "Taman"
+  ) %>%
+  add_trace(
+    y = ~transit_stations_percent_change_from_baseline,
+    type = "scatter",
+    mode = "lines",
+    name = "Transportasi"
+  ) %>%
+  add_trace(
+    y = ~workplaces_percent_change_from_baseline,
+    type = "scatter",
+    mode = "lines",
+    name = "Tempat kerja"
+  ) %>%
+  add_trace(
+    y = ~residential_percent_change_from_baseline,
+    type = "scatter",
+    mode = "lines",
+    name = "Pemukiman"
+  ) %>%
+  add_trace(
+    data = provCaseDaily,
+    x = ~date,
+    y = ~DIY,
+    type = "bar",
+    name = "Kasus Harian Baru"
+  ) %>% 
+  layout(
+    title = "Mobility Data Wilayah DIY Selama Pandemi",
+    yaxis = list(title = "Intensitas"),
+    xaxis = list(title = "Tanggal", rangeslider = list(type = "date")),
+    legend = list(x = 0.01, y = -0.0001),
+    hovermode = "compare"
+  )
 ```
+
+
+<!-- Kluster Map -->
+<!-- ======================================================================= -->
+
+<!-- Row {data-width=400} -->
+<!-- ------------------------------------- -->
+
+<!-- ### Visualisasi Cluster Infeksi -->
+
+<!-- ```{r} -->
+<!-- idn.covidtracing <- read.csv("https://docs.google.com/spreadsheets/d/1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw/export?format=csv&gid=0", sep=",", skip = 1) -->
+<!-- idn.covidtracing$Sumber.Kontak <- ifelse(idn.covidtracing$Jenis.kasus == "Impor", "Impor", as.character(idn.covidtracing$Sumber.Kontak)) -->
+<!-- tracing.network <- idn.covidtracing %>% select(No, Sumber.Kontak) -->
+<!-- tracing.network$Sumber.Kontak <- ifelse(tracing.network$Sumber.Kontak == "", tracing.network$No, as.character(tracing.network$Sumber.Kontak)) -->
+
+<!-- simpleNetwork(tracing.network, fontSize = 12, zoom = TRUE) -->
+<!-- ``` -->
 
 Peta Kasus Seluruh Indonesia
 =======================================================================
+
+Row {data-width=400}
+-------------------------------------
 
 ### **Jumlah kasus di seluruh dunia**
 
