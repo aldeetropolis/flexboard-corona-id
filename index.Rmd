@@ -8,7 +8,7 @@ output:
     source_code: embed
     vertical_layout: fill
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ```{r setup, include=FALSE}
@@ -38,13 +38,13 @@ death_color <- "red"
 numtest_color <- "orange"
 #------------------ Data Indonesia---------------
 # designate project-specific cache
-#options(gargle_oauth_cache = ".kawalcovidauth", gargle_oauth_email = "mail.aldilas@gmail.com")
+options(gargle_oauth_cache = ".kawalcovidauth", gargle_oauth_email = "mail.aldilas@gmail.com")
 sheets_auth(cache = ".kawalcovidauth")
 df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(date = 1, case_daily = 2, case_cum = 5, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9, test_daily = `Orang yang dites`)
 df$date <- as.Date(df$date, format = "%d %b")
 #------------------ Data lokal pulau Jawa--------
-provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A1:AI102") %>% rename(date = 1)
-provCaseDaily <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A104:AI208", col_names = TRUE) %>% rename(date = 1)
+provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A1:AI104") %>% rename(date = 1)
+provCaseDaily <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A106:AI212", col_names = TRUE) %>% rename(date = 1)
 provCaseDaily[is.na(provCaseDaily)] <- 0
 provCaseDat <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Kasus per Provinsi", range = "Kasus per Provinsi!B2:H38")
 provCaseDat[4,1] <- "Kepulauan Bangka Belitung"
@@ -65,7 +65,7 @@ Statistik Nasional
 Row {data-width=400}
 -----------------------------------------------------------------------
 
-### confirmed {.value-box}
+### Confirmed {.value-box}
 
 ```{r}
 valueBox(
@@ -79,7 +79,7 @@ valueBox(
 ### Recovered {.value-box}
 ```{r}
 valueBox(
-  value = paste(format(sum(df$recovered_daily, na.rm=TRUE), big.mark = ","), " (", round(100 *  sum(df$recovered_daily, na.rm = TRUE) / sum(df$`Kasus baru`, na.rm=TRUE), 1), "%)", sep = ""),
+  value = paste(format(sum(df$recovered_daily, na.rm=TRUE), big.mark = ","), " (", round(100 *  sum(df$recovered_daily, na.rm = TRUE) / sum(df$case_daily, na.rm=TRUE), 1), "%)", sep = ""),
   caption = "Jumlah kasus sembuh",
   icon = "fas fa-laugh",
   color = recovered_color)
@@ -89,7 +89,7 @@ valueBox(
 
 ```{r}
 valueBox(
-  value = paste(format(sum(df$death_daily, na.rm = TRUE), big.mark = ","), " (", round(100 * sum(df$death_daily, na.rm = TRUE) / sum(df$`Kasus baru`, na.rm = TRUE), 1), "%)", sep = ""),
+  value = paste(format(sum(df$death_daily, na.rm = TRUE), big.mark = ","), " (", round(100 * sum(df$death_daily, na.rm = TRUE) / sum(df$case_daily, na.rm = TRUE), 1), "%)", sep = ""),
   caption = "Jumlah kasus meninggal",
   icon = "fas fa-sad-tear",
   color = death_color
@@ -100,7 +100,7 @@ valueBox(
 
 ```{r}
 valueBox(
-  value = paste(format(sum(df$`Sampel baru harian`, na.rm = TRUE), big.mark = ","), "", sep = " "),
+  value = paste(format(sum(df$test_daily, na.rm = TRUE), big.mark = ","), "", sep = " "),
   caption = "Jumlah tes yang telah dilakukan",
   icon = "fas fa-vial",
   color = numtest_color
@@ -355,6 +355,19 @@ plot_ly(data = mobility, x = ~date) %>%
     y = ~DIY,
     type = "bar",
     name = "Kasus Harian Baru"
+  ) %>%
+  add_annotations(
+    x = as.Date("2020-06-07"),
+    y = 3,
+    text = paste("Berita viral Malioboro padat pesepeda"),
+    xref = "x",
+    yref = "y",
+    arrowhead = 5,
+    arrowhead = 3,
+    arrowsize = 1,
+    showarrow = TRUE,
+    ax = 0,
+    ay = -90
   ) %>% 
   layout(
     title = "Mobility Data Wilayah DIY Selama Pandemi",
