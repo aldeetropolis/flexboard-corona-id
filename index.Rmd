@@ -39,12 +39,12 @@ numtest_color <- "orange"
 #------------------ Data Indonesia---------------
 # designate project-specific cache
 options(gargle_oauth_cache = ".kawalcovidauth", gargle_oauth_email = "mail.aldilas@gmail.com")
-sheets_auth(cache = ".kawalcovidauth")
-df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(date = 1, case_daily = 2, case_cum = 5, recovered_daily = 7, recovered_cum = 8, death_cum = 10, death_daily = 9, test_daily = `Orang yang dites`)
+gs4_auth(cache = ".kawalcovidauth")
+df <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Statistik Harian") %>% rename(date = 1, case_daily = 2, case_cum = 5, recovered_daily = 8, recovered_cum = 9, death_daily = 12, death_cum = 13, test_daily = 25)
 df$date <- as.Date(df$date, format = "%d %b")
 #------------------ Data lokal pulau Jawa--------
-provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A1:AI104") %>% rename(date = 1)
-provCaseDaily <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A106:AI212", col_names = TRUE) %>% rename(date = 1)
+provCaseCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A1:AI129") %>% rename(date = 1)
+provCaseDaily <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", range = "Timeline!A131:AI262", col_names = TRUE) %>% rename(date = 1)
 provCaseDaily[is.na(provCaseDaily)] <- 0
 provCaseDat <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Kasus per Provinsi", range = "Kasus per Provinsi!B2:H38")
 provCaseDat[4,1] <- "Kepulauan Bangka Belitung"
@@ -52,11 +52,11 @@ provCaseDat[6,1] <- "Daerah Istimewa Yogyakarta"
 provCaseDat[7,1] <- "Daerah Khusus Ibukota Jakarta"
 #provRecoverCum <- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(50:68)) %>% rename(date = 1)
 #provDeathCum<- read_sheet("1ma1T9hWbec1pXlwZ89WakRk-OfVUQZsOCFl4FwZxzVw", sheet = "Timeline", range = cell_rows(90:111)) %>% rename(date = 1)
-idn <- read_sf("C:/Users/aldilas/Documents/Analisis Data Transaksi Halodoc/idn_map/Indonesia_Polygon.shp")
+idn <- read_sf("D:/Analisis Data Transaksi Halodoc/idn_map/Indonesia_Polygon.shp")
 provCaseDat <- provCaseDat %>% pivot_longer(cols = -`Provinsi Asal`, names_to = "type")
 provCaseMap <- merge(idn, provCaseDat, all = TRUE)
 #Google Mobility data
-mobility <- read_csv("C:/Users/aldilas/Downloads/Global_Mobility_Report.csv") %>% filter(sub_region_1 == "Special Region of Yogyakarta")
+mobility <- read_csv("Global_Mobility_Report.csv") %>% filter(sub_region_1 == "Special Region of Yogyakarta")
 ```
 
 Statistik Nasional
@@ -372,7 +372,7 @@ plot_ly(data = mobility, x = ~date) %>%
   layout(
     title = "Mobility Data Wilayah DIY Selama Pandemi",
     yaxis = list(title = "Intensitas"),
-    xaxis = list(title = "Tanggal", rangeslider = list(type = "date")),
+    xaxis = list(title = "Tanggal", rangeslider = list(type = "date"), range = c("2020-02-15", "2020-07-07")),
     legend = list(x = 0.01, y = -0.0001),
     hovermode = "compare"
   )
