@@ -5,7 +5,6 @@ output:
   flexdashboard::flex_dashboard:
     orientation: rows
     # social: ["facebook", "twitter", "linkedin"]
-    source_code: embed
     vertical_layout: fill
 editor_options: 
   chunk_output_type: inline
